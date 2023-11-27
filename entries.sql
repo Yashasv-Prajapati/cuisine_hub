@@ -20,9 +20,9 @@ INSERT INTO buys (user_id, recipe_id, transaction_time, instances, amount_paid) 
     (1, 2, '2023-11-12 11:30:00', 1, 180);
 
 -- Insert entries into sells
-INSERT INTO sells (user_id, raw_material_id, transaction_time, status) VALUES
-    (2, 1, '2023-11-02 08:00:00', 'approved'),
-    (2, 2, '2023-11-06 09:45:00', 'pending');
+INSERT INTO sells (user_id, raw_material_id, transaction_time) VALUES
+    (2, 1, '2023-11-02 08:00:00'),
+    (2, 2, '2023-11-06 09:45:00');
 
 -- Insert entries into is_made_of
 INSERT INTO is_made_of (recipe_id, raw_material_id, quantity_required) VALUES
