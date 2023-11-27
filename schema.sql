@@ -14,7 +14,7 @@ create table user(
     id int auto_increment primary key,
     role varchar(10) default 'customer',
     name varchar(50),
-    phone varchar(15) check( length(phone) >= 10),
+    phone varchar(15) check(length(phone) >= 10),
     email varchar(50) unique check (email LIKE '%_@__%.__%'),
     address varchar(100),
     password varchar(500) not null check (length(password) >= 4)
@@ -38,7 +38,7 @@ create table raw_material(
 create table recipe(
 	id int auto_increment primary key,
     name varchar(100),
-    available int check(available >= 0)
+    description varchar(500)
 );
 
 -- relationship between customer and recipes
@@ -67,7 +67,7 @@ create table sells(
 create table is_made_of(
 	recipe_id int not null,
     raw_material_id int not null,
-    quantity_required int check(quantity_required > 0),
+    quantity_required int check(quantity_required > 0), -- quantity of this raw_material required to make one unit of the recipe
     foreign key(recipe_id) references recipe(id),
     foreign key(raw_material_id) references raw_material(id),
     primary key(recipe_id,raw_material_id)

@@ -238,8 +238,8 @@ try:
                 address = input()
                 print("Enter phone(must be longer than 10 characters): ")
                 phone = input()
-
                 register(name, email, password, role, address, phone)
+            
             elif choice == 'l':
                 print("Enter email: ")
                 email = input()
@@ -248,6 +248,7 @@ try:
                 print("Enter role(customer/seller): ")
                 role = input()
                 login(email, password, role)
+            
             else:
                 print("Invalid choice")
                 continue
@@ -258,7 +259,7 @@ try:
                 print(option)
 
             chosen_option = int(input())
-            if chosen_option == 1:
+            if chosen_option == 1 : 
                 print("Name of raw material: ")
                 name = input()
                 print("Price of raw material: ")
