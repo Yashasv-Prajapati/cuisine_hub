@@ -55,6 +55,8 @@ create table sells(
     raw_material_id int not null,
     transaction_time timestamp,
     units int,
+    price int,
+    exp_time timestamp,
     status varchar(10) check( status in ("approved","pending")),
     foreign key(user_id) references user(id),
     foreign key(raw_material_id) references raw_material(id),

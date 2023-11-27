@@ -50,6 +50,7 @@ CREATE PROCEDURE `request_to_sell`(
     IN rm_quantity_left INT)
 BEGIN
 	declare seller_id int;
+    declare raw_material_id int;
     
 	-- Check if the user has the required role (seller)
     IF u_role != 'seller' THEN
@@ -57,27 +58,38 @@ BEGIN
         SET MESSAGE_TEXT = 'Only sellers are allowed to create selling requests';
     END IF;
     
+    -- find seller
     select id into seller_id
     from user where
     user.email = u_email AND
     user.name=u_name AND
     user.role=u_role;
-    
-    -- Check if the seller exists
-    IF seller_id IS NULL THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'Seller with the provided email does not exist';
-    ELSE
-        -- Insert a new raw material record
-        INSERT INTO raw_material (name, price, transaction_time, exp_time, quantity_left, seller_id, status)
-        VALUES (rm_name, rm_price, NOW(), rm_exp_time, rm_quantity_left, seller_id, 'pending');
+
+    -- find raw material id
+    select id into raw_material_id
+    from raw_material where
+    raw_material.name = rm_name
+
+    -- Check if the raw material and seller exists
+    IF (raw_material_id IS NOT NULL AND seller_id IS NOT NULL) THEN
+        INSERT INTO sells (user_id, raw_material_id,exp_time, transaction_time, units, status, price)
+        VALUES (seller_id, raw_material_id, rm_exp_time, NOW(), rm_quantity_left, 'pending', rm_price);
+    ELSE -- one of them don't exist
+        IF raw_material_id IS NULL THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Raw material with the provided name does not exist';
+        ELSE
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Seller with the provided email does not exist';
+        END IF;
+        
     END IF;
     
 END
 
 CREATE PROCEDURE `get_recipes`()
 BEGIN
-	SELECT id,name, price FROM recipe;
+	SELECT id,name, description FROM recipe;
 END
 
 CREATE PROCEDURE `place_order` (
