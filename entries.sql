@@ -1,30 +1,38 @@
--- Insert users (seller and customer)
+-- Inserting users
 INSERT INTO user (name, phone, email, address, password) VALUES
-('Seller1', '1234567890', 'seller1@example.com', 'Seller Address 1', 'seller1pass'),
-('Customer1', '9876543210', 'customer1@example.com', 'Customer Address 1', 'customer1pass');
+('John Doe', '1234567890', 'john.doe@example.com', '123 Main St', 'password123'),
+('Alice Smith', '9876543210', 'alice.smith@example.com', '456 Oak St', 'securepass'),
+('Bob Johnson', '5551234567', 'bob.johnson@example.com', '789 Pine St', 'strongpassword');
 
--- Insert raw materials
+-- Inserting raw materials
 INSERT INTO raw_material (name, price, exp_time, quantity_left) VALUES
-('RawMaterial1', 50, '2023-12-31 23:59:59', 100),
-('RawMaterial2', 75, '2023-12-31 23:59:59', 150);
+('Flour', 5, '2023-12-31', 100),
+('Sugar', 3, '2023-12-31', 150),
+('Eggs', 2, '2023-12-31', 50),
+('Milk', 4, '2023-12-31', 75);
 
--- Insert recipes
+-- Inserting recipes
 INSERT INTO recipe (name, description) VALUES
-('Recipe1', 'Description for Recipe1'),
-('Recipe2', 'Description for Recipe2');
+('Chocolate Cake', 'A delicious chocolate cake recipe.'),
+('Blueberry Pancakes', 'Fluffy pancakes with fresh blueberries.');
 
--- Insert buys (customer buying recipes)
+-- Inserting buys
 INSERT INTO buys (user_id, recipe_id, transaction_time, instances, cost_price) VALUES
-(2, 1, '2023-11-01 12:30:00', 2, 100),
-(2, 2, '2023-11-02 14:45:00', 1, 75);
+(1, 1, '2023-11-01 12:00:00', 2, 15),
+(2, 2, '2023-11-02 14:30:00', 1, 8);
 
--- Insert sells (seller selling raw materials)
+-- Inserting sells
 INSERT INTO sells (user_id, raw_material_id, transaction_time, units, price, exp_time, status) VALUES
-(1, 1, '2023-11-03 10:00:00', 50, 50, '2023-12-31 23:59:59', 'approved'),
-(1, 2, '2023-11-04 11:15:00', 100, 70, '2023-12-31 23:59:59', 'pending');
+(1, 1, '2023-11-03 10:00:00', 10, 50, '2023-12-15', 'pending'),
+(3, 2, '2023-11-04 11:45:00', 5, 15, '2023-12-20', 'approved');
 
--- Insert ingredients (linking recipes with raw materials)
+-- Inserting ingredients
 INSERT INTO ingredient (recipe_id, raw_material_id, quantity_required) VALUES
-(1, 1, 5),
-(1, 2, 3),
-(2, 2, 2);
+(1, 1, 300), -- Chocolate Cake needs 300g of Flour
+(1, 2, 200), -- Chocolate Cake needs 200g of Sugar
+(1, 3, 4),   -- Chocolate Cake needs 4 Eggs
+(1, 4, 150), -- Chocolate Cake needs 150ml of Milk
+(2, 1, 200), -- Blueberry Pancakes need 200g of Flour
+(2, 2, 100), -- Blueberry Pancakes need 100g of Sugar
+(2, 3, 2),   -- Blueberry Pancakes need 2 Eggs
+(2, 4, 100); -- Blueberry Pancakes need 100ml of Milk

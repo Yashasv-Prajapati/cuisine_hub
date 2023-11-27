@@ -145,3 +145,35 @@ BEGIN
         END IF;
     END IF;
 END
+
+CREATE PROCEDURE add_raw_materials_to_recipe(IN p_recipe_id INT, IN p_raw_material_name VARCHAR(255), IN p_quantity INT)
+BEGIN
+    DECLARE v_raw_material_id INT;
+    
+    -- Check if raw material already exists
+    SELECT id INTO v_raw_material_id FROM raw_material WHERE name = p_raw_material_name LIMIT 1;
+
+    -- If raw material does not exist, add it to the raw_material table
+    IF v_raw_material_id IS NULL THEN
+        INSERT INTO raw_material (name) VALUES (p_raw_material_name);
+        SET v_raw_material_id = LAST_INSERT_ID();
+    END IF;
+
+    -- Add raw material to the ismadeof table
+    INSERT INTO ingredient (recipe_id, raw_material_id, quantity_required)
+    VALUES (p_recipe_id, v_raw_material_id, p_quantity);
+END
+
+CREATE PROCEDURE add_recipe(IN p_recipe_name VARCHAR(255),IN p_recipe_descr VARCHAR(255))
+BEGIN
+    DECLARE v_recipe_id INT;
+    
+    -- Check if the recipe already exists
+    SELECT id INTO v_recipe_id FROM recipe WHERE name = p_recipe_name LIMIT 1;
+    
+    -- If the recipe does not exist, add it to the recipe table
+    IF v_recipe_id IS NULL THEN
+        INSERT INTO recipe (name,description) VALUES (p_recipe_name, p_recipe_descr);
+        SET v_recipe_id = LAST_INSERT_ID();
+    END IF;
+END
