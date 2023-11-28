@@ -29,8 +29,11 @@ def hash_password(password):
 
 def check_password(password, hashed_password):
     # Check if the provided password matches the hashed password
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
-
+    try:
+        return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+    except Exception as e:
+        print("Password does not match")
+        return False
 
 def register(name, email, password, role, address, phone):
     password = hash_password(password)
@@ -97,8 +100,7 @@ def check_role(role_required):
                 return func(*args, **kwargs)
             else:
                 print(f"Unauthorized. Only {role_required}s and admin are allowed to use this function.")
-                # You can raise an exception or return a specific response if needed.
-                return None  # For illustration purposes
+                return 
 
         return wrapper
     return decorator
@@ -128,33 +130,60 @@ def request_to_sell(rm_name, rm_price, rm_exp_time, rm_quantity_left):
 
 @check_role('customer')
 def place_order(recipe_id, quantity):
+    
+    print(recipe_id, quantity)
+    # get logged in customer details
     user_name = USER['name']
     user_email = USER['email']
     user_role = USER['role']
 
-    # get amount to pay
-    c.execute("select price from recipe where recipe.id = %s", (recipe_id,))
-    price = c.fetchone()[0]
-    amount_to_pay = price * quantity
-
-    print("This is the total amount you have to pay: ", amount_to_pay)
-    print("Do you want to continue? (y/n)")
-    choice = input()
-    if(choice == 'n'):
-        return
-
-    params = (user_name, user_email, user_role, recipe_id, quantity, amount_to_pay)
-
     try:
+
+        # calculate amount to pay by customer
+        c.execute("call get_recipe_price(%s, @recipe_price)", [recipe_id])
+        c.execute("select @recipe_price")
+        result = c.fetchone()
+
+        if not result:
+            print("Something went wrong, couldn't get price")
+            return
         
-        c.callproc('place_order', params)    
+        price = result[0]
+        amount_to_pay = price * (1+profit_margin) * (1+tax)
+        print("This is the total amount you have to pay: ", amount_to_pay)
+        print("Do you want to continue? (y/n)")
+
+
+        choice = input()
+        if(choice == 'n'):
+            return
+
+        # USER HAS TO CONFIRM THE ORDER
+        # check if the items are available or not
+        print("HELLO")
+        c.execute('select raw_material_id from ingredient as i where i.recipe_id = %s', [recipe_id])
+        ingredients = c.fetchall()
+        print("HELLO")
+
+        for ingredient in ingredients:
+            print(ingredient[0])
+            ingredient_id = ingredient[0]
+            c.callproc('check_raw_material', [ingredient_id, quantity])
+
+        for ingredient in ingredients:
+            ingredient_id = ingredient[0]
+            c.callproc('update_raw_materials', [ingredient_id, recipe_id, quantity])
+            connection.commit()
+
+        # add the order to the buys table
+        c.callproc('place_order', [user_name, user_email, user_role, recipe_id, quantity,price, amount_to_pay])
         connection.commit()
 
-        print("Order placed successfully")
-
+        
     except mysql.connector.Error as err:
         print(f"Error: {err}")
-        return
+
+    return
 
 @check_role('customer')
 def show_menu():
@@ -174,7 +203,7 @@ def show_menu():
         
     return recipes
 
-# @check_role("customer")
+@check_role("customer")
 def add_recipe():
     print("Enter recipe name: ")
     recipe_name = input()
@@ -208,8 +237,7 @@ def add_recipe():
         for raw_material in raw_materials:
             print(raw_material[0], raw_material[1])
             c.callproc('add_raw_materials_to_recipe', (recipe_id, raw_material[0], raw_material[1]))
-
-        connection.commit()
+            connection.commit()
 
         print("Recipe added successfully")
 
@@ -246,7 +274,7 @@ try:
 
     # a = login('yamu@gmail.com', '1234', 'customer')
 
-    add_recipe()
+    # place_order(1, 2)
     while True:
         if not USER['logged_in'] :
             print("Register or Login(r/l): ")
@@ -316,7 +344,7 @@ try:
                 if(index < 0 or index >= len(recipes)): # invalid index
                     print("Invalid recipe number")
                     continue
-                recipe_id = recipes[index]
+                recipe_id = recipes[index][0]
 
                 print("Enter quantity: ")
                 quantity = int(input())
@@ -339,3 +367,5 @@ finally:
     if 'connection' in locals() and connection.is_connected():
         connection.close()
         print("Connection closed")
+    else:
+        print("Fuck")

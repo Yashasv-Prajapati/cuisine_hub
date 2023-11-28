@@ -44,6 +44,7 @@ create table buys(
 	transaction_time timestamp,
     instances int check(instances > 0),
     cost_price int check(cost_price > 0),
+    selling_price int check(selling_price > 0),
     foreign key (user_id) references user(id),
     foreign key (recipe_id) references recipe(id),
     primary key (user_id, recipe_id, transaction_time)
@@ -57,7 +58,7 @@ create table sells(
     units int,
     price int,
     exp_time timestamp,
-    status varchar(10) check( status in ("approved","pending")),
+    status varchar(10) CONSTRAINT status_check CHECK (status in ("approved", "pending", "using", "finished")),
     foreign key(user_id) references user(id),
     foreign key(raw_material_id) references raw_material(id),
     primary key(user_id, raw_material_id, transaction_time)

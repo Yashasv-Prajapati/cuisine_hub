@@ -177,3 +177,171 @@ BEGIN
         SET v_recipe_id = LAST_INSERT_ID();
     END IF;
 END
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_recipe_price`(in recipe_id int)
+BEGIN
+	DECLARE recipe_price INT;
+
+	SELECT SUM(i.quantity_required * rm.price) INTO recipe_price
+	FROM ingredient AS i
+	JOIN raw_material AS rm ON i.raw_material_id = rm.id
+	WHERE i.recipe_id = recipe_id;
+
+END
+
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `update_raw_materials`(IN rm_id int, IN recipe_id int, IN number_of_items int)
+BEGIN
+
+	declare urm_price int;
+	declare urm_quantity int;
+	declare urm_exp_time timestamp;
+    declare existing_quantity int;
+    declare required_quantity int;
+	
+    -- check for left quantity of this raw material
+    select quantity_left into existing_quantity
+    from raw_material as rm
+    where rm.id = rm_id 
+    limit 1;
+    
+    -- check for required quantity of this raw material
+    select quantity_required*number_of_items into required_quantity
+    from ingredient as i
+    where i.raw_material_id = rm_id
+    limit 1;
+	
+    if existing_quantity > required_quantity then
+		-- update raw material table and sells table
+        update raw_material 
+        set quantity_left = quantity_left - required_quantity
+        where raw_material.id = rm_id
+        limit 1;
+        
+        update sells 
+        set units = units - required_quantity
+        where raw_material_id = rm_id and
+        status = 'using'
+        limit 1;
+	else
+		
+		-- find the raw material in sells you will use next
+        SELECT price, units, exp_time
+		INTO urm_price, urm_quantity, urm_exp_time
+		FROM sells
+		WHERE sells.raw_material_id = rm_id
+		AND status = 'approved'
+        AND exp_time > NOW()
+		LIMIT 1;
+        
+        if (select found_rows()) = 0 then
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Insufficient raw material to make the recipe';
+		end if;
+        
+        -- update the old entry(currently which is exhausted now) of raw material in sells table to finished
+        update sells
+        set status = 'finished',
+        units = 0
+        where sells.raw_material_id = rm_id
+        and status = 'using'
+        limit 1;
+        
+        -- update new raw material quantity as quantity we have(new + old) - exisiting raw material quantity
+        update raw_material
+        set price = urm_price,
+			quantity_left = urm_quantity + existing_quantity - required_quantity, 
+			exp_time = urm_exp_time
+        where raw_material.id = rm_id
+        limit 1;
+        
+        -- also update in sells table
+        update sells
+		set units = urm_quantity + existing_quantity - required_quantity,
+			status = 'using'
+        where status = 'approved'
+        and sells.raw_material_id = rm_id
+        limit 1;
+	end if;
+END
+
+
+-- checkkkkkk
+CREATE DEFINER=`root`@`localhost` PROCEDURE `check_raw_material`(
+    IN rm_id INT,
+    IN number_of_items INT
+    )
+BEGIN
+
+    declare existing_quantity int;
+    declare required_quantity int;
+	
+    -- check for left quantity of this raw material
+    select quantity_left into existing_quantity
+    from raw_material as rm
+    where rm.id = rm_id 
+    limit 1;
+    
+    -- check for required quantity of this raw material
+    select quantity_required*number_of_items into required_quantity
+    from ingredient as i
+    where i.raw_material_id = rm_id
+    limit 1;
+	
+    if existing_quantity <= required_quantity then
+		-- find the raw material in sells you will use next
+        SELECT price, units, exp_time
+		FROM sells
+		WHERE sells.raw_material_id = rm_id
+		AND status = 'approved'
+        AND exp_time > NOW()
+		LIMIT 1;
+        
+        if (select found_rows()) = 0 then
+			SIGNAL SQLSTATE '45000'
+			SET MESSAGE_TEXT = 'Insufficient raw material to make the recipe';
+		end if;
+	end if;
+    
+
+END
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `place_order`(
+    IN u_name VARCHAR(50),
+    IN u_email VARCHAR(50),
+    IN u_role VARCHAR(10),
+    IN u_recipe_id INT,
+    IN u_quantity INT,
+    IN u_cost_price INT,
+    IN u_selling_price INT
+    )
+BEGIN
+	DECLARE u_id INT;
+    DECLARE r_available INT;
+
+    -- Step 1: Get user ID based on email
+    SELECT id INTO u_id
+    FROM user
+    WHERE email = u_email;
+
+	-- Check if the user exists
+    IF u_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'User with the provided email does not exist';
+    ELSE
+	-- Step 2: Check if the user role matches the provided role
+        SELECT role INTO @user_role
+        FROM user
+        WHERE id = u_id;
+
+        IF u_role != @user_role THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'User role does not match the provided role';
+        ELSE
+			-- Step 4: Insert order record
+			INSERT INTO buys (user_id, recipe_id, transaction_time, instances, cost_price, selling_price)
+			VALUES (u_id, u_recipe_id, NOW(), u_quantity, u_cost_price, u_selling_price);
+
+        END IF;
+    END IF;
+END
