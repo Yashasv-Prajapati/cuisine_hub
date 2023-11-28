@@ -40,7 +40,7 @@ BEGIN
 	END IF;
 END
 
-CREATE PROCEDURE `request_to_sell`(
+CREATE DEFINER=`root`@`localhost` PROCEDURE `request_to_sell`(
     IN u_name VARCHAR(50),
     IN u_email VARCHAR(50),
     IN u_role VARCHAR(10),
@@ -68,7 +68,7 @@ BEGIN
     -- find raw material id
     select id into raw_material_id
     from raw_material where
-    raw_material.name = rm_name
+    raw_material.name = rm_name;
 
     -- Check if the raw material and seller exists
     IF (raw_material_id IS NOT NULL AND seller_id IS NOT NULL) THEN
