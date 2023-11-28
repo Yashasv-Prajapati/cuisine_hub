@@ -1,4 +1,4 @@
-CREATE PROCEDURE `login` (
+CREATE DEFINER=`root`@`localhost` PROCEDURE `login`(
 	IN u_email VARCHAR(50),
     IN u_role VARCHAR(10),
     OUT hashed_password VARCHAR(500)
@@ -23,7 +23,7 @@ BEGIN
 END
 
 
-CREATE PROCEDURE `register`(in u_name varchar(50), in u_email varchar(50), in u_password varchar(500), in u_phone varchar(15), in u_address varchar(100), in u_role varchar(10) )
+CREATE DEFINER=`root`@`localhost` PROCEDURE `register`(in u_name varchar(50), in u_email varchar(50), in u_password varchar(500), in u_phone varchar(15), in u_address varchar(100), in u_role varchar(10) )
 BEGIN
 	DECLARE email_count INT;
 
@@ -87,18 +87,21 @@ BEGIN
     
 END
 
-CREATE PROCEDURE `get_recipes`()
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_recipe_ingredients`(in recipe_id int)
 BEGIN
-	SELECT id,name, description FROM recipe;
+    select raw_material_id
+    from ingredient as i
+    where i.recipe_id = recipe_id;
 END
 
-CREATE PROCEDURE `place_order` (
+CREATE DEFINER=`root`@`localhost` PROCEDURE `place_order`(
     IN u_name VARCHAR(50),
     IN u_email VARCHAR(50),
     IN u_role VARCHAR(10),
     IN u_recipe_id INT,
     IN u_quantity INT,
-    IN u_amount_paid INT
+    IN u_cost_price INT,
+    IN u_selling_price INT
     )
 BEGIN
 	DECLARE u_id INT;
@@ -109,12 +112,12 @@ BEGIN
     FROM user
     WHERE email = u_email;
 
-    -- Check if the user exists
+	-- Check if the user exists
     IF u_id IS NULL THEN
         SIGNAL SQLSTATE '45000'
         SET MESSAGE_TEXT = 'User with the provided email does not exist';
     ELSE
-        -- Step 2: Check if the user role matches the provided role
+	-- Step 2: Check if the user role matches the provided role
         SELECT role INTO @user_role
         FROM user
         WHERE id = u_id;
@@ -123,30 +126,15 @@ BEGIN
             SIGNAL SQLSTATE '45000'
             SET MESSAGE_TEXT = 'User role does not match the provided role';
         ELSE
-            -- Step 3: Get recipe available quantity
-            SELECT available INTO r_available
-            FROM recipe
-            WHERE id = u_recipe_id;
+			-- Step 4: Insert order record
+			INSERT INTO buys (user_id, recipe_id, transaction_time, instances, cost_price, selling_price)
+			VALUES (u_id, u_recipe_id, NOW(), u_quantity, u_cost_price, u_selling_price);
 
-            -- Check if the recipe exists and has sufficient available quantity
-            IF r_available IS NULL OR u_quantity > r_available THEN
-                SIGNAL SQLSTATE '45000'
-                SET MESSAGE_TEXT = 'Invalid recipe or insufficient available quantity';
-            ELSE
-                -- Step 4: Insert order record
-                INSERT INTO buys (user_id, recipe_id, transaction_time, instances, amount_paid)
-                VALUES (u_id, u_recipe_id, NOW(), u_quantity, u_amount_paid);
-
-                -- Step 5: Update recipe available quantity
-                UPDATE recipe
-                SET available = r_available - u_quantity
-                WHERE id = u_recipe_id;
-            END IF;
         END IF;
     END IF;
 END
 
-CREATE PROCEDURE add_raw_materials_to_recipe(IN p_recipe_id INT, IN p_raw_material_name VARCHAR(255), IN p_quantity INT)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_raw_materials_to_recipe`(IN p_recipe_id INT, IN p_raw_material_name VARCHAR(255), IN p_quantity INT)
 BEGIN
     DECLARE v_raw_material_id INT;
     
@@ -164,7 +152,7 @@ BEGIN
     VALUES (p_recipe_id, v_raw_material_id, p_quantity);
 END
 
-CREATE PROCEDURE add_recipe(IN p_recipe_name VARCHAR(255),IN p_recipe_descr VARCHAR(255))
+CREATE DEFINER=`root`@`localhost` PROCEDURE `add_recipe`(IN p_recipe_name VARCHAR(255),IN p_recipe_descr VARCHAR(255))
 BEGIN
     DECLARE v_recipe_id INT;
     
@@ -176,11 +164,11 @@ BEGIN
         INSERT INTO recipe (name,description) VALUES (p_recipe_name, p_recipe_descr);
         SET v_recipe_id = LAST_INSERT_ID();
     END IF;
+
 END
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `get_recipe_price`(in recipe_id int)
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_recipe_price`(in recipe_id int, out recipe_price int)
 BEGIN
-	DECLARE recipe_price INT;
 
 	SELECT SUM(i.quantity_required * rm.price) INTO recipe_price
 	FROM ingredient AS i
@@ -304,44 +292,4 @@ BEGIN
 	end if;
     
 
-END
-
-CREATE DEFINER=`root`@`localhost` PROCEDURE `place_order`(
-    IN u_name VARCHAR(50),
-    IN u_email VARCHAR(50),
-    IN u_role VARCHAR(10),
-    IN u_recipe_id INT,
-    IN u_quantity INT,
-    IN u_cost_price INT,
-    IN u_selling_price INT
-    )
-BEGIN
-	DECLARE u_id INT;
-    DECLARE r_available INT;
-
-    -- Step 1: Get user ID based on email
-    SELECT id INTO u_id
-    FROM user
-    WHERE email = u_email;
-
-	-- Check if the user exists
-    IF u_id IS NULL THEN
-        SIGNAL SQLSTATE '45000'
-        SET MESSAGE_TEXT = 'User with the provided email does not exist';
-    ELSE
-	-- Step 2: Check if the user role matches the provided role
-        SELECT role INTO @user_role
-        FROM user
-        WHERE id = u_id;
-
-        IF u_role != @user_role THEN
-            SIGNAL SQLSTATE '45000'
-            SET MESSAGE_TEXT = 'User role does not match the provided role';
-        ELSE
-			-- Step 4: Insert order record
-			INSERT INTO buys (user_id, recipe_id, transaction_time, instances, cost_price, selling_price)
-			VALUES (u_id, u_recipe_id, NOW(), u_quantity, u_cost_price, u_selling_price);
-
-        END IF;
-    END IF;
 END
