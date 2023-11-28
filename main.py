@@ -149,6 +149,10 @@ def place_order(recipe_id, quantity):
             return
         
         price = result[0]
+        if price == None:
+            print("Something went wrong, couldn't get price")
+            return
+        
         amount_to_pay = price * (1+profit_margin) * (1+tax)
         print("This is the total amount you have to pay: ", amount_to_pay)
         print("Do you want to continue? (y/n)")
@@ -160,10 +164,8 @@ def place_order(recipe_id, quantity):
 
         # USER HAS TO CONFIRM THE ORDER
         # check if the items are available or not
-        print("HELLO")
         c.execute('select raw_material_id from ingredient as i where i.recipe_id = %s', [recipe_id])
         ingredients = c.fetchall()
-        print("HELLO")
 
         for ingredient in ingredients:
             print(ingredient[0])
@@ -203,7 +205,7 @@ def show_menu():
         
     return recipes
 
-@check_role("customer")
+@check_role("admin")
 def add_recipe():
     print("Enter recipe name: ")
     recipe_name = input()
@@ -353,10 +355,20 @@ try:
                 add_recipe()
             else:
                 break
+        if USER['logged_in'] and USER['role'] == 'admin':
+            options = ['1. Add recipe', '2. Exit']
+            for option in options:
+                print(option)
 
-            print("Done, do you want to do something else? (y/n)")
-            if(input() == 'n'):
+            chosen_option = int(input())
+            if chosen_option == 1:
+                add_recipe()
+            else:
                 break
+
+        print("Done, do you want to do something else? (y/n)")
+        if(input() == 'n'):
+            break
 
 
 except mysql.connector.Error as err:

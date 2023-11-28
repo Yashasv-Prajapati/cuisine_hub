@@ -1,49 +1,54 @@
--- Inserting entries for the 'user' table
+-- Users
 INSERT INTO user (role, name, phone, email, address, password)
 VALUES
-('customer', 'Alice Smith', '1234567890', 'alice@email.com', '123 Main St', 'password123'),
-('seller', 'Bob Baker', '9876543210', 'bob@email.com', '456 Oak St', 'securepass'),
-('customer', 'Charlie Chef', '5551234567', 'charlie@email.com', '789 Maple St', 'pass1234');
+  ('customer', 'John Doe', '1234567890', 'john.doe@example.com', '123 Main St', 'password123'),
+  ('seller', 'Jane Seller', '9876543210', 'jane.seller@example.com', '456 Market St', 'password456');
 
--- Inserting entries for the 'raw_material' table
+-- Raw Materials
 INSERT INTO raw_material (name, price, exp_time, quantity_left)
 VALUES
-('Flour', 500, '2023-12-31 00:00:00', 1000),
-('Sugar', 300, '2023-12-31 00:00:00', 800),
-('Eggs', 200, '2023-12-31 00:00:00', 500),
-('Butter', 700, '2023-12-31 00:00:00', 300);
+  ('Flour', 5, '2023-12-31 00:00:00', 100),
+  ('Sugar', 3, '2023-12-31 00:00:00', 50),
+  ('Eggs', 2, '2023-12-31 00:00:00', 75);
 
--- Inserting entries for the 'recipe' table
+-- Recipes
 INSERT INTO recipe (name, description)
 VALUES
-('Chocolate Cake', 'A delicious chocolate cake recipe.'),
-('Blueberry Pastry', 'A mouth-watering blueberry pastry recipe.'),
-('Whole Wheat Bread', 'Healthy whole wheat bread recipe.');
+  ('Chocolate Cake', 'A delicious chocolate cake recipe'),
+  ('French Bread', 'A classic French bread recipe'),
+  ('Blueberry Muffins', 'Homemade blueberry muffins recipe');
 
--- Inserting entries for the 'buys' table
+-- Buys (Customer purchases recipes)
 INSERT INTO buys (user_id, recipe_id, transaction_time, instances, cost_price, selling_price)
 VALUES
-(1, 1, '2023-11-28 12:00:00', 2, 800, 1200),
-(1, 2, '2023-11-28 13:30:00', 1, 500, 800),
-(2, 1, '2023-11-28 14:45:00', 3, 750, 1100),
-(3, 3, '2023-11-28 16:00:00', 2, 600, 1000);
+  (1, 1, '2023-11-01 12:00:00', 2, 10, 15),
+  (1, 2, '2023-11-02 14:30:00', 1, 5, 8),
+  (1, 3, '2023-11-03 10:00:00', 3, 12, 18);
 
--- Inserting entries for the 'sells' table
+-- Sells (Seller sells raw materials)
 INSERT INTO sells (user_id, raw_material_id, transaction_time, units, price, exp_time, status)
 VALUES
-(2, 1, '2023-11-28 12:30:00', 500, 400, '2024-01-31 00:00:00', 'approved'),
-(2, 2, '2023-11-28 14:00:00', 300, 250, '2024-01-31 00:00:00', 'pending'),
-(3, 3, '2023-11-28 15:15:00', 200, 180, '2024-01-31 00:00:00', 'using'),
-(3, 4, '2023-11-28 16:45:00', 100, 600, '2024-01-31 00:00:00', 'finished');
+  (2, 1, '2023-11-01 10:00:00', 50, 4, '2023-12-31 00:00:00', 'approved'),
+  (2, 2, '2023-11-02 09:30:00', 25, 2.5, '2023-12-31 00:00:00', 'approved'),
+  (2, 3, '2023-11-03 08:45:00', 30, 1.5, '2023-12-31 00:00:00', 'approved'),
+  (2, 1, '2023-11-04 11:00:00', 40, 3.5, '2023-12-31 00:00:00', 'approved'),
+  (2, 2, '2023-11-05 12:30:00', 20, 2, '2023-12-31 00:00:00', 'approved'),
+  (2, 3, '2023-11-06 09:15:00', 25, 1.25, '2023-12-31 00:00:00', 'approved'),
+  (2, 1, '2023-11-07 08:30:00', 35, 4, '2023-12-31 00:00:00', 'approved'),
+  (2, 2, '2023-11-08 14:45:00', 15, 2.75, '2023-12-31 00:00:00', 'approved'),
+  (2, 3, '2023-11-09 10:20:00', 28, 1.75, '2023-12-31 00:00:00', 'approved'),
+  (2, 1, '2023-11-10 11:45:00', 45, 3.25, '2023-12-31 00:00:00', 'approved'),
+  (2, 2, '2023-11-11 09:00:00', 22, 2.25, '2023-12-31 00:00:00', 'approved'),
+  (2, 3, '2023-11-12 08:15:00', 30, 1.5, '2023-12-31 00:00:00', 'approved');
 
--- Inserting entries for the 'ingredient' table
+
+-- Ingredient (Raw materials required for recipes)
 INSERT INTO ingredient (recipe_id, raw_material_id, quantity_required)
 VALUES
-(1, 1, 200),
-(1, 2, 150),
-(1, 3, 3),
-(2, 2, 100),
-(2, 3, 2),
-(2, 4, 50),
-(3, 1, 300),
-(3, 3, 5);
+  (1, 1, 2),
+  (1, 2, 1),
+  (2, 1, 4),
+  (2, 2, 2),
+  (2, 3, 1),
+  (3, 2, 2),
+  (3, 3, 1);

@@ -4,10 +4,12 @@ create database db;
 use db;
 show tables;
 
--- drop table sells;
--- drop table is_made_of;
--- drop table raw_material;
--- drop table seller_info;
+--  drop table sells;
+--  drop table ingredient;
+--  drop table raw_material;
+--  drop table buys;
+--  drop table user;
+--  drop table recipe;
 
 -- information about user - can be seller or customer
 create table user(
