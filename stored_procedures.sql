@@ -178,9 +178,8 @@ BEGIN
     END IF;
 END
 
-CREATE DEFINER=`root`@`localhost` PROCEDURE `get_recipe_price`(in recipe_id int)
+CREATE DEFINER=root@localhost PROCEDURE `get_recipe_price`(in recipe_id int, out recipe_price int)
 BEGIN
-	DECLARE recipe_price INT;
 
 	SELECT SUM(i.quantity_required * rm.price) INTO recipe_price
 	FROM ingredient AS i
@@ -205,13 +204,36 @@ BEGIN
     where rm.id = rm_id 
     limit 1;
     
+    if existing_quantity is NULL then
+		SELECT price, units, exp_time
+		INTO urm_price, urm_quantity, urm_exp_time
+		FROM sells
+		WHERE sells.raw_material_id = rm_id
+		AND status = 'approved'
+        AND exp_time > NOW()
+		LIMIT 1;
+        
+        update raw_material -- update raw material
+        set price = urm_price, 
+        quantity_left = urm_quantity,
+        exp_time = urm_exp_time
+        where raw_material.id = rm_id
+        limit 1;
+		
+        update sells
+        set status = 'using'
+        where sells.raw_material_id = rm_id
+        limit 1;
+        
+	else
+    
     -- check for required quantity of this raw material
     select quantity_required*number_of_items into required_quantity
     from ingredient as i
     where i.raw_material_id = rm_id
     limit 1;
 	
-    if existing_quantity > required_quantity then
+    if (existing_quantity > required_quantity) then
 		-- update raw material table and sells table
         update raw_material 
         set quantity_left = quantity_left - required_quantity
@@ -263,6 +285,7 @@ BEGIN
         and sells.raw_material_id = rm_id
         limit 1;
 	end if;
+    end if;
 END
 
 
@@ -345,3 +368,27 @@ BEGIN
         END IF;
     END IF;
 END
+
+
+CREATE PROCEDURE  `approve_recipe`(IN p_user_id INT, IN p_raw_material_id INT)
+BEGIN
+    DECLARE v_status VARCHAR(255);
+
+    -- Find the corresponding entry in sells table
+    SELECT status
+    INTO v_status
+    FROM sells
+    WHERE user_id = p_user_id AND raw_material_id = p_raw_material_id;
+
+    -- Check if the entry exists
+    IF v_status = "pending" THEN
+        -- Update the status field to "approved"
+        UPDATE sells
+        SET status = 'approved'
+        WHERE user_id = p_user_id AND raw_material_id = p_raw_material_id;
+
+        SELECT CONCAT('Approval successful for user_id: ', p_user_id, ' and raw_material_id: ', p_raw_material_id) AS message;
+    ELSE
+        SELECT 'Entry not found' AS message;
+    END IF;
+END 

@@ -138,7 +138,15 @@ def place_order(recipe_id, quantity):
     user_role = USER['role']
 
     try:
+        c.execute('select raw_material_id from ingredient as i where i.recipe_id = %s', [recipe_id])
+        ingredients = c.fetchall()
 
+        for ingredient in ingredients:
+            ingredient_id = ingredient[0]
+            c.callproc('update_raw_materials', [ingredient_id, recipe_id, 0])
+            connection.commit()
+
+        
         # calculate amount to pay by customer
         c.execute("call get_recipe_price(%s, @recipe_price)", [recipe_id])
         c.execute("select @recipe_price")
@@ -205,6 +213,34 @@ def show_menu():
         
     return recipes
 
+
+@check_role("admin")
+def approve():
+    print("Here is the Pending materials\n")
+    recipes = []
+
+    try:
+        # get all recipes
+        c.execute('SELECT user_id, raw_material_id, status FROM sells WHERE status="pending";')
+
+        recipes = c.fetchall()
+
+        print("user_id - raw_material_id - status")
+        for recipe in recipes:
+            print(f"{recipe[0]} - {recipe[1]} - {recipe[2]}")
+        print("Select the user_id you want to approve")
+        userID = int(input())
+        print("Select the raw_material_id you want to approve")
+        RawID =int(input())
+        c.callproc('approve_recipe',(userID,RawID))
+        connection.commit()
+
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        
+    return 
+
 @check_role("admin")
 def add_recipe():
     print("Enter recipe name: ")
@@ -253,7 +289,7 @@ def add_recipe():
 # Replace these values with your MySQL server details
 host = "localhost"
 user = "root"
-password = "admin"
+password = "Gopal@123"
 database = "db"
 
 # Establish a connection to the MySQL server
@@ -356,13 +392,15 @@ try:
             else:
                 break
         if USER['logged_in'] and USER['role'] == 'admin':
-            options = ['1. Add recipe', '2. Exit']
+            options = ['1. Add recipe', '2. Approve','3.Exit']
             for option in options:
                 print(option)
 
             chosen_option = int(input())
             if chosen_option == 1:
                 add_recipe()
+            if chosen_option==2:
+                approve()
             else:
                 break
 
