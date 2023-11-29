@@ -193,13 +193,36 @@ BEGIN
     where rm.id = rm_id 
     limit 1;
     
+    if existing_quantity is NULL then
+		SELECT price, units, exp_time
+		INTO urm_price, urm_quantity, urm_exp_time
+		FROM sells
+		WHERE sells.raw_material_id = rm_id
+		AND status = 'approved'
+        AND exp_time > NOW()
+		LIMIT 1;
+        
+        update raw_material -- update raw material
+        set price = urm_price, 
+        quantity_left = urm_quantity,
+        exp_time = urm_exp_time
+        where raw_material.id = rm_id
+        limit 1;
+		
+        update sells
+        set status = 'using'
+        where sells.raw_material_id = rm_id
+        limit 1;
+        
+	else
+    
     -- check for required quantity of this raw material
     select quantity_required*number_of_items into required_quantity
     from ingredient as i
     where i.raw_material_id = rm_id
     limit 1;
 	
-    if existing_quantity > required_quantity then
+    if (existing_quantity > required_quantity) then
 		-- update raw material table and sells table
         update raw_material 
         set quantity_left = quantity_left - required_quantity
@@ -251,6 +274,7 @@ BEGIN
         and sells.raw_material_id = rm_id
         limit 1;
 	end if;
+    end if;
 END
 
 
@@ -293,3 +317,67 @@ BEGIN
     
 
 END
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `place_order`(
+    IN u_name VARCHAR(50),
+    IN u_email VARCHAR(50),
+    IN u_role VARCHAR(10),
+    IN u_recipe_id INT,
+    IN u_quantity INT,
+    IN u_cost_price INT,
+    IN u_selling_price INT
+    )
+BEGIN
+	DECLARE u_id INT;
+    DECLARE r_available INT;
+
+    -- Step 1: Get user ID based on email
+    SELECT id INTO u_id
+    FROM user
+    WHERE email = u_email;
+
+	-- Check if the user exists
+    IF u_id IS NULL THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'User with the provided email does not exist';
+    ELSE
+	-- Step 2: Check if the user role matches the provided role
+        SELECT role INTO @user_role
+        FROM user
+        WHERE id = u_id;
+
+        IF u_role != @user_role THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'User role does not match the provided role';
+        ELSE
+			-- Step 4: Insert order record
+			INSERT INTO buys (user_id, recipe_id, transaction_time, instances, cost_price, selling_price)
+			VALUES (u_id, u_recipe_id, NOW(), u_quantity, u_cost_price, u_selling_price);
+
+        END IF;
+    END IF;
+END
+
+
+CREATE PROCEDURE  `approve_recipe`(IN p_user_id INT, IN p_raw_material_id INT)
+BEGIN
+    DECLARE v_status VARCHAR(255);
+
+    -- Find the corresponding entry in sells table
+    SELECT status
+    INTO v_status
+    FROM sells
+    WHERE user_id = p_user_id AND raw_material_id = p_raw_material_id;
+
+    -- Check if the entry exists
+    IF v_status = "pending" THEN
+        -- Update the status field to "approved"
+        UPDATE sells
+        SET status = 'approved'
+        WHERE user_id = p_user_id AND raw_material_id = p_raw_material_id;
+
+        SELECT CONCAT('Approval successful for user_id: ', p_user_id, ' and raw_material_id: ', p_raw_material_id) AS message;
+    ELSE
+        SELECT 'Entry not found' AS message;
+    END IF;
+END 
