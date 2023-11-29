@@ -100,7 +100,7 @@ def check_role(role_required):
                 return func(*args, **kwargs)
             else:
                 print(f"Unauthorized. Only {role_required}s and admin are allowed to use this function.")
-                return 
+                return None
 
         return wrapper
     return decorator
@@ -380,4 +380,4 @@ finally:
         connection.close()
         print("Connection closed")
     else:
-        print("Fuck")
+        print("Connection not closed")
