@@ -43,3 +43,30 @@ def add_recipe():
         print(f"Error: {err}")
 
     return
+
+@check_role("admin")
+def approve():
+    print("Here is the Pending materials\n")
+    recipes = []
+
+    try:
+        # get all recipes
+        c.execute('SELECT user_id, raw_material_id, status FROM sells WHERE status="pending";')
+
+        recipes = c.fetchall()
+
+        print("user_id - raw_material_id - status")
+        for recipe in recipes:
+            print(f"{recipe[0]} - {recipe[1]} - {recipe[2]}")
+        print("Select the user_id you want to approve")
+        userID = int(input())
+        print("Select the raw_material_id you want to approve")
+        RawID =int(input())
+        c.callproc('approve_recipe',(userID,RawID))
+        connection.commit()
+
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        
+    return 

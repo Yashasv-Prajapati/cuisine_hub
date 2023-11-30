@@ -93,15 +93,17 @@ if __name__ == "__main__":
                 else:
                     print("Invalid option")
             if USER['logged_in'] and USER['role'] == 'admin':
-                options = ['1. Add recipe', '2. Exit']
+                options = ['1. Add recipe', '2. Approve','3.Exit']
                 for option in options:
                     print(option)
 
-                chosen_option = int(input())
-                if chosen_option == 1:
-                    add_recipe()
-                else:
-                    print("Invalid option")
+            chosen_option = int(input())
+            if chosen_option == 1:
+                add_recipe()
+            if chosen_option==2:
+                approve()
+            else:
+                break
 
             print("Done, do you want to do something else? (y/n)")
             if(input() == 'n'):
@@ -117,4 +119,4 @@ if __name__ == "__main__":
             connection.close()
             print("Connection closed")
         else:
-            print("Fuck")
+            print("Connection not closed")
