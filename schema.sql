@@ -47,6 +47,7 @@ create table buys(
     instances int check(instances > 0),
     cost_price int check(cost_price > 0),
     selling_price int check(selling_price > 0),
+    profit int,
     foreign key (user_id) references user(id),
     foreign key (recipe_id) references recipe(id),
     primary key (user_id, recipe_id, transaction_time)
