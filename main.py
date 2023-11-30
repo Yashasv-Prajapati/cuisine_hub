@@ -1,7 +1,7 @@
 import mysql.connector
 from modules.seller import request_to_sell
 from modules.customer import place_order, show_menu
-from modules.admin import add_recipe
+from modules.admin import add_recipe, approve
 from modules.authorization import register, login
 from modules.connect_db import connection, USER
 
